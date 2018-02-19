@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import * as Stats from 'stats.js'
 import '../../static/js/GLTFLoader'
+import '../../static/js/Math'
 // import shaderVert from 'shaders/custom.vert'
 // import shaderFrag from 'shaders/custom.frag'
 
@@ -51,11 +52,14 @@ class Main {
     this._mesh = new THREE.Mesh(geometry, material)
     this._scene.add(this._mesh)
 
-    this.goUp = false
-    this.goDown = false
-    this.goLeft = false
-    this.goRight = false
-    this.maxX = 30
+    this.mouseX = 0
+    this.mouseY = 0
+    this.prevMouseX = this.mouseX
+    this.prevMouseY = this.mouseY
+    this.diffX = 0
+    this.diffY = 0
+
+    this.maxX = 80
     this.maxY = 50
     this.velX = 1.5
     this.destPos = new THREE.Vector2()
@@ -96,6 +100,7 @@ class Main {
 
     this.loadCoin()
 
+    this._renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false)
     this._renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false)
     this._renderer.domElement.addEventListener('mouseup', this.onMouseUp.bind(this), false)
     this._renderer.domElement.addEventListener('touchstart', this.onMouseDown.bind(this), false)
@@ -109,30 +114,21 @@ class Main {
     this.animate()
   }
 
+  onMouseMove (event) {
+    this.mouseX = event.pageX
+    this.mouseY = event.pageY
+  }
+
   onMouseDown () {
-    this.goUp = true
-    this.goDown = false
   }
 
   onMouseUp () {
-    this.goUp = false
-    this.goDown = true
   }
 
   onKeyDown (e) {
-    e = e || window.event
-    if (e.keyCode === 38) this.goUp = true
-    else if (e.keyCode === 40) this.goDown = true
-    else if (e.keyCode === 37) this.goLeft = true
-    else if (e.keyCode === 39) this.goRight = true
   }
 
   onKeyUp (e) {
-    e = e || window.event
-    if (e.keyCode === 38) this.goUp = false
-    else if (e.keyCode === 40) this.goDown = false
-    else if (e.keyCode === 37) this.goLeft = false
-    else if (e.keyCode === 39) this.goRight = false
   }
 
   onWindowResize () {
@@ -146,6 +142,14 @@ class Main {
     this.stats.begin()
 
     var currentLevel = 1
+
+    // mouse
+    this.diffX += (this.mouseX - this.prevMouseX) / 100
+    this.diffY += (this.mouseY - this.prevMouseY) / 100
+    this.diffX = Math.clamp(this.diffX, -1, 1)
+    this.diffY = Math.clamp(this.diffY, -1, 1)
+    this.prevMouseX = this.mouseX
+    this.prevMouseY = this.mouseY
 
     // instantiate coins
     if (this.coin) {
@@ -174,13 +178,10 @@ class Main {
 
       // position
       model.position.z += this.velX
-      if (this.goUp && this.destPos.y < this.maxY) this.destPos.y += 0.4
-      else if (this.goDown && this.destPos.y > 0) this.destPos.y -= 0.3
-      if (this.goLeft && this.destPos.x < this.maxX) this.destPos.x += 0.3
-      else if (this.goRight && this.destPos.x > -this.maxX) this.destPos.x -= 0.3
-      model.position.x += (this.destPos.x - model.position.x) * 0.05
-      model.position.y += (this.destPos.y - model.position.y) * 0.05
+      model.position.x += (Math.map(-this.diffX, -1, 1, -this.maxX, this.maxX) - model.position.x) * 0.05
+      model.position.y += (Math.map(-this.diffY, -1, 1, 0, this.maxY) - model.position.y) * 0.05
 
+      // camera
       this._camera.position.z = model.position.z - 50
 
       // direction
@@ -223,7 +224,7 @@ class Main {
       if (level.model instanceof THREE.Group) {
         var combined = new THREE.Geometry()
         for (var i = 0; i < level.model.children.length; i++) {
-          THREE.GeometryUtils.merge(combined, new THREE.Geometry().fromBufferGeometry(level.model.children[i].geometry))
+          combined.merge(new THREE.Geometry().fromBufferGeometry(level.model.children[i].geometry))
         }
         level.collider = combined
       } else if (level.model instanceof THREE.Mesh) {
