@@ -3,12 +3,13 @@ import GLTFLoader from '../../../static/js/GLTFLoader'
 const EventEmitter = require('events')
 
 class Ship extends EventEmitter {
-  constructor (modelUrl, scale, rotation) {
+  constructor (modelUrl, scale, rotation, velocity) {
     super()
 
     this.modelUrl = modelUrl
     this.scale = scale
     this.rotation = rotation
+    this.velocity = velocity
     this.model = null
 
     this.load()
