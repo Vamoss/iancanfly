@@ -6,7 +6,7 @@
  * @author Don McCurdy / https://www.donmccurdy.com
  */
 
-THREE.GLTFLoader = ( function () {
+const GLTFLoader = ( function () {
 
 	function GLTFLoader( manager ) {
 
@@ -135,7 +135,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			console.time( 'GLTFLoader' );
+			// console.time( 'GLTFLoader' );
 
 			var parser = new GLTFParser( json, extensions, {
 
@@ -147,7 +147,7 @@ THREE.GLTFLoader = ( function () {
 
 			parser.parse( function ( scene, scenes, cameras, animations, asset ) {
 
-				console.timeEnd( 'GLTFLoader' );
+				// console.timeEnd( 'GLTFLoader' );
 
 				var glTF = {
 					scene: scene,
@@ -2636,3 +2636,5 @@ THREE.GLTFLoader = ( function () {
 	return GLTFLoader;
 
 } )();
+
+export default GLTFLoader

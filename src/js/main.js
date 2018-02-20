@@ -1,5 +1,9 @@
 import * as THREE from 'three'
 import * as Stats from 'stats.js'
+import Parachute from './ships/Parachute'
+import Plane from './ships/Plane'
+import Spaceship from './ships/Spaceship'
+import Coin from './resources/Coin'
 import '../../static/js/GLTFLoader'
 import '../../static/js/Math'
 // import shaderVert from 'shaders/custom.vert'
@@ -8,6 +12,39 @@ import '../../static/js/Math'
 class Main {
   constructor () {
     var t = this
+
+    this.currentLevel = 0
+
+    this.mouseX = 0
+    this.mouseY = 0
+    this.prevMouseX = this.mouseX
+    this.prevMouseY = this.mouseY
+    this.diffX = 0
+    this.diffY = 0
+
+    this.maxX = 80
+    this.maxY = 50
+    this.velX = 1.5
+    this.destPos = new THREE.Vector2()
+    this.raycaster = new THREE.Raycaster()
+    this.raycaster.far = 2
+    this.collidableMeshList = []
+    this.direction = new THREE.Vector3(0, 0, 10)
+    this.direction.normalize()
+    this.coins = []
+    this.coin = new Coin()
+
+    this.levels = [
+      {
+        ship: new Parachute()
+      },
+      {
+        ship: new Plane()
+      },
+      {
+        ship: new Spaceship()
+      }
+    ]
 
     this._camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000)
     this._camera.position.set(-100, 50, 0)
@@ -52,53 +89,12 @@ class Main {
     this._mesh = new THREE.Mesh(geometry, material)
     this._scene.add(this._mesh)
 
-    this.mouseX = 0
-    this.mouseY = 0
-    this.prevMouseX = this.mouseX
-    this.prevMouseY = this.mouseY
-    this.diffX = 0
-    this.diffY = 0
-
-    this.maxX = 80
-    this.maxY = 50
-    this.velX = 1.5
-    this.destPos = new THREE.Vector2()
-    this.raycaster = new THREE.Raycaster()
-    this.raycaster.far = 2
-    this.collidableMeshList = []
-    this.direction = new THREE.Vector3(0, 0, 10)
-    this.direction.normalize()
-    this.coins = []
-    this.coin = null
-
-    this.levels = [
-      {
-        modelUrl: 'parachute.gltf',
-        scale: 2.5,
-        rotation: 0
-      },
-      {
-        modelUrl: 'plane.gltf',
-        scale: 6,
-        rotation: Math.PI + Math.PI * 0.5
-      },
-      {
-        modelUrl: 'spaceship.gltf',
-        scale: 30,
-        rotation: Math.PI
-      },
-      {
-        modelUrl: 'spaceship2.gltf',
-        scale: 10,
-        rotation: 0
-      }
-    ]
-
+    // add ship models to scene
     for (var i = 0; i < this.levels.length; i++) {
-      this.loadModel(i)
+      this.levels[i].ship.on('onModelLoaded', function (model) {
+        t._scene.add(model)
+      })
     }
-
-    this.loadCoin()
 
     this._renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false)
     this._renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false)
@@ -120,6 +116,7 @@ class Main {
   }
 
   onMouseDown () {
+    this.nextLevel()
   }
 
   onMouseUp () {
@@ -141,8 +138,6 @@ class Main {
   animate () {
     this.stats.begin()
 
-    var currentLevel = 1
-
     // mouse
     this.diffX += (this.mouseX - this.prevMouseX) / 100
     this.diffY += (this.mouseY - this.prevMouseY) / 100
@@ -152,9 +147,9 @@ class Main {
     this.prevMouseY = this.mouseY
 
     // instantiate coins
-    if (this.coin) {
+    if (this.coin.model) {
       while (this.coins.length < 5 && Math.random() > 0.97) {
-        var coin = this.coin.clone()
+        var coin = this.coin.model.clone()
         coin.rotation.z = Math.random() * Math.PI
         coin.position.set(
           (Math.random() - 0.5) * 2 * this.maxX,
@@ -175,7 +170,7 @@ class Main {
       }
     }
 
-    var model = this.levels[currentLevel].model
+    var model = this.levels[this.currentLevel].ship.model
     if (model) {
       var oldModelPos = model.position.clone()
 
@@ -192,10 +187,10 @@ class Main {
       dir.subVectors(model.position, oldModelPos)
       dir.add(model.position)
       model.lookAt(dir)
-      model.rotation.y += this.levels[currentLevel].rotation
+      model.rotation.y += this.levels[this.currentLevel].ship.rotation
 
       // collider
-      var collider = this.levels[currentLevel].collider
+      var collider = this.levels[this.currentLevel].ship.collider
       for (var i = 0; i < collider.vertices.length; i++) {
         if (i % 3 !== 0) continue
         var vertex = collider.vertices[i].clone()
@@ -214,48 +209,12 @@ class Main {
     requestAnimationFrame(this.animate.bind(this))
   }
 
-  loadModel (levelIndex) {
-    var t = this
-    var level = t.levels[levelIndex]
-    var loader = new THREE.GLTFLoader()
-    loader.load('static/models/' + level.modelUrl, function (gltf) {
-      level.model = gltf.scene.children[0]
-      level.model.scale.set(level.scale, level.scale, level.scale)
-      t._scene.add(level.model)
+  nextLevel () {
+    var nextLevel = this.currentLevel + 1
+    if (nextLevel >= this.levels.length) nextLevel = 0
 
-      // collider
-      if (level.model instanceof THREE.Group) {
-        var combined = new THREE.Geometry()
-        for (var i = 0; i < level.model.children.length; i++) {
-          combined.merge(new THREE.Geometry().fromBufferGeometry(level.model.children[i].geometry))
-        }
-        level.collider = combined
-      } else if (level.model instanceof THREE.Mesh) {
-        level.collider = new THREE.Geometry().fromBufferGeometry(level.model.geometry)
-      }
-    },
-    function (xhr) {
-      // console.log((xhr.loaded / xhr.total * 100) + '% loaded')
-    },
-    function (error) {
-      console.error('GLTF LOADER:', error)
-    })
-  }
-
-  loadCoin () {
-    var t = this
-    var loader = new THREE.GLTFLoader()
-    loader.load('static/models/coin.gltf', function (gltf) {
-      t.coin = gltf.scene.children[0].clone()
-      t.coin.scale.set(30, 30, 30)
-      t.coin.lookAt(0, 1, 0)
-    },
-    function (xhr) {
-      // console.log((xhr.loaded / xhr.total * 100) + '% loaded')
-    },
-    function (error) {
-      console.error('GLTF LOADER:', error)
-    })
+    this.levels[nextLevel].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
+    this.currentLevel = nextLevel
   }
 
   removeCoin (coin) {
