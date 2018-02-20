@@ -153,10 +153,13 @@ class Main {
 
     // instantiate coins
     if (this.coin) {
-      while (this.coins.length < 10 && Math.random() > 0.95) {
+      while (this.coins.length < 5 && Math.random() > 0.97) {
         var coin = this.coin.clone()
         coin.rotation.z = Math.random() * Math.PI
-        coin.position.set((Math.random() - 0.5) * 2 * this.maxX, Math.random() * this.maxY + 20, this._camera.position.z + 250 + Math.random() * 60)
+        coin.position.set(
+          (Math.random() - 0.5) * 2 * this.maxX,
+          Math.random() * (this.maxY - 20) + 20,
+          this._camera.position.z + 250 + Math.random() * 60)
         this._scene.add(coin)
         this.coins.push(coin)
         this.collidableMeshList.push(coin)
@@ -244,7 +247,7 @@ class Main {
     var loader = new THREE.GLTFLoader()
     loader.load('static/models/coin.gltf', function (gltf) {
       t.coin = gltf.scene.children[0].clone()
-      t.coin.scale.set(10, 10, 10)
+      t.coin.scale.set(30, 30, 30)
       t.coin.lookAt(0, 1, 0)
     },
     function (xhr) {
