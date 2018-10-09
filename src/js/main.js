@@ -6,6 +6,7 @@ import Spaceship from './ships/Spaceship'
 import Coin from './resources/Coin'
 import '../../static/js/GLTFLoader'
 import '../../static/js/Math'
+import ParticleManager from './particles/ParticleManager'
 // import shaderVert from 'shaders/custom.vert'
 // import shaderFrag from 'shaders/custom.frag'
 
@@ -94,6 +95,8 @@ class Main {
     dirLight.name = 'Point Light'
     dirLight.position.set(-10, 6, -10)
     t._scene.add(dirLight)
+
+    this.particles = new ParticleManager(this._scene, this._camera)
 
     const geometry = new THREE.SphereGeometry(1, 320, 320)
     const material = new THREE.MeshPhongMaterial({color: this.levels[this.currentLevel].groundColor, emissive: 0x00ff00})
@@ -245,8 +248,13 @@ class Main {
             this.onResourceCollide(collisionResults[j].object)
           }
         }
-      } // if model
-    } // if !this.paused
+      // if model
+      }
+
+      this.particles.update()
+
+    // if !this.paused
+    }
 
     this._renderer.render(this._scene, this._camera)
 
@@ -266,7 +274,7 @@ class Main {
     this._scene.fog = new THREE.FogExp2(this.levels[this.currentLevel].skyColor, 0.001)
 
     const material = new THREE.MeshPhongMaterial({color: this.levels[this.currentLevel].groundColor, emissive: this.levels[this.currentLevel].groundColor})
-    this.ground.material = material;
+    this.ground.material = material
   }
 
   onResourceCollide (resource) {
