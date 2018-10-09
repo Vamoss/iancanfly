@@ -41,15 +41,21 @@ class Main {
     this.levels = [
       {
         ship: new Parachute(),
-        altitude: this.minAltitude
+        altitude: this.minAltitude,
+        skyColor: 0xcaf8f1,
+        groundColor: 0x008800
       },
       {
         ship: new Plane(),
-        altitude: 10000000
+        altitude: 10000000,
+        skyColor: 0xaaffff,
+        groundColor: 0xcaf8f1
       },
       {
         ship: new Spaceship(),
-        altitude: 400000000
+        altitude: 400000000,
+        skyColor: 0x000000,
+        groundColor: 0x000033
       }
     ]
 
@@ -58,8 +64,8 @@ class Main {
     this._camera.lookAt(0, 0, 100)
 
     this._scene = new THREE.Scene()
-    this._scene.background = new THREE.Color(0xcaf8f1)
-    this._scene.fog = new THREE.FogExp2(0xcaf8f1, 0.001)
+    this._scene.background = new THREE.Color(this.levels[this.currentLevel].skyColor)
+    this._scene.fog = new THREE.FogExp2(this.levels[this.currentLevel].skyColor, 0.001)
 
     this._renderer = new THREE.WebGLRenderer()
     this._renderer.setPixelRatio(window.devicePixelRatio)
@@ -90,7 +96,7 @@ class Main {
     t._scene.add(dirLight)
 
     const geometry = new THREE.SphereGeometry(1, 320, 320)
-    const material = new THREE.MeshPhongMaterial({color: 0x008800, emissive: 0x00ff00})
+    const material = new THREE.MeshPhongMaterial({color: this.levels[this.currentLevel].groundColor, emissive: 0x00ff00})
     /*
     const material2 = new THREE.ShaderMaterial({
       vertexShader: shaderVert,
@@ -255,6 +261,12 @@ class Main {
 
     this.levels[nextLevel].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
     this.currentLevel = nextLevel
+
+    this._scene.background = new THREE.Color(this.levels[this.currentLevel].skyColor)
+    this._scene.fog = new THREE.FogExp2(this.levels[this.currentLevel].skyColor, 0.001)
+
+    const material = new THREE.MeshPhongMaterial({color: this.levels[this.currentLevel].groundColor, emissive: this.levels[this.currentLevel].groundColor})
+    this.ground.material = material;
   }
 
   onResourceCollide (resource) {
