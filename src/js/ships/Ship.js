@@ -11,6 +11,7 @@ class Ship extends EventEmitter {
     this.rotation = rotation
     this.velocity = velocity
     this.model = null
+    this.center = new THREE.Vector3(0, 0, 0)
 
     this.load()
   }
@@ -22,18 +23,8 @@ class Ship extends EventEmitter {
     loader.load('static/models/' + this.modelUrl, function (gltf) {
       t.model = gltf.scene.children[0]
       t.model.scale.set(t.scale, t.scale, t.scale)
+      t.center = new THREE.Box3().setFromObject(t.model).getCenter()
       t.emit('onModelLoaded', t.model)
-
-      // collider
-      if (t.model instanceof THREE.Group) {
-        var combined = new THREE.Geometry()
-        for (var i = 0; i < t.model.children.length; i++) {
-          combined.merge(new THREE.Geometry().fromBufferGeometry(t.model.children[i].geometry))
-        }
-        t.collider = combined
-      } else if (t.model instanceof THREE.Mesh) {
-        t.collider = new THREE.Geometry().fromBufferGeometry(t.model.geometry)
-      }
     },
     function (xhr) {
       // console.log((xhr.loaded / xhr.total * 100) + '% loaded')

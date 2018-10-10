@@ -32,7 +32,6 @@ class Main {
     this.destPos = new THREE.Vector2()
     this.raycaster = new THREE.Raycaster()
     this.raycaster.far = 2
-    this.collidableMeshList = []
     this.direction = new THREE.Vector3(0, 0, 10)
     this.direction.normalize()
     this.coins = []
@@ -198,7 +197,6 @@ class Main {
             this._camera.position.z + 250 + Math.random() * 60)
           this._scene.add(coin)
           this.coins.push(coin)
-          this.collidableMeshList.push(coin)
         }
       }
 
@@ -238,14 +236,10 @@ class Main {
         model.rotation.y += this.levels[this.currentLevel].ship.rotation
 
         // collider
-        var collider = this.levels[this.currentLevel].ship.collider
-        for (var i = 0; i < collider.vertices.length; i++) {
-          if (i % 3 !== 0) continue
-          var vertex = collider.vertices[i].clone()
-          this.raycaster.set(vertex.applyMatrix4(model.matrix), this.direction)
-          var collisionResults = this.raycaster.intersectObjects(this.collidableMeshList)
-          for (var j = 0; j < collisionResults.length; j++) {
-            this.onResourceCollide(collisionResults[j].object)
+        var position = model.position.clone().add(this.levels[this.currentLevel].ship.center)
+        for (var i = this.coins.length - 1; i >= 0; i--) {
+          if (position.distanceToSquared(this.coins[i].position) < 100) {
+            this.onResourceCollide(this.coins[i])
           }
         }
       // if model
@@ -288,12 +282,7 @@ class Main {
   }
 
   removeCoin (coin) {
-    var index = this.collidableMeshList.indexOf(coin)
-    if (index > -1) {
-      this.collidableMeshList.splice(index, 1)
-    }
-
-    index = this.coins.indexOf(coin)
+    var index = this.coins.indexOf(coin)
     if (index > -1) {
       this.coins.splice(index, 1)
     }

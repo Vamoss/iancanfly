@@ -37,7 +37,7 @@ class ParticleManager extends EventEmitter {
       transparent: true
     })
     this.particleSystem = new THREE.Points(this.particles, pMaterial)
-    this.particleSystem.sortParticles = true;
+    this.particleSystem.sortParticles = true
 
     this._scene.add(this.particleSystem)
   }
@@ -49,7 +49,6 @@ class ParticleManager extends EventEmitter {
   }
 
   update () {
-
     let xDiff = this._camera.position.x - this.prevCamX
     let yDiff = this._camera.position.y - this.prevCamY
     let zDiff = this._camera.position.z - this.prevCamZ
@@ -59,7 +58,6 @@ class ParticleManager extends EventEmitter {
     this.prevCamZ = this._camera.position.z
 
     this.particleSystem.position.set(this._camera.position.x, this._camera.position.y, this._camera.position.z)
-    console.log(this.particleSystem.position)
 
     for (let i = 0; i < this.particleSystem.geometry.vertices.length; i++) {
       let particle = this.particleSystem.geometry.vertices[i]
@@ -74,7 +72,7 @@ class ParticleManager extends EventEmitter {
       }
     }
 
-    this.particleSystem.geometry.verticesNeedUpdate = true;
+    this.particleSystem.geometry.verticesNeedUpdate = true
   }
 }
 
