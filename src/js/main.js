@@ -42,20 +42,20 @@ class Main {
       {
         ship: new Parachute(),
         altitude: this.minAltitude,
-        skyColor: 0xcaf8f1,
-        groundColor: 0x008800
+        skyColor: new THREE.Color(0xcaf8f1),
+        groundColor: new THREE.Color(0x008800)
       },
       {
         ship: new Plane(),
-        altitude: 10000000,
-        skyColor: 0xaaffff,
-        groundColor: 0xcaf8f1
+        altitude: 400, // 1000
+        skyColor: new THREE.Color(0xaaffff),
+        groundColor: new THREE.Color(0xcaf8f1)
       },
       {
         ship: new Spaceship(),
-        altitude: 400000000,
-        skyColor: 0x000000,
-        groundColor: 0x000033
+        altitude: 600, // 2000,
+        skyColor: new THREE.Color(0x000000),
+        groundColor: new THREE.Color(0x000033)
       }
     ]
 
@@ -184,7 +184,15 @@ class Main {
       this.altitude -= 0.005
       if (this.altitude < this.minAltitude) this.altitude = this.minAltitude
       this.curAltitude += (this.altitude - this.curAltitude) * 0.05
-      // console.log(this.altitude)
+
+      let nextLevel = this.currentLevel + 1
+      let progress = 0
+      if (nextLevel >= this.levels.length) {
+        nextLevel = this.currentLevel
+        progress = 1
+      } else {
+        progress = (this.curAltitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
+      }
 
       // instantiate coins
       if (this.coin.model) {
@@ -247,6 +255,23 @@ class Main {
 
       this.particles.update()
 
+      // color
+      let skyColor = this.levels[this.currentLevel].skyColor.clone()
+      skyColor.lerp(this.levels[nextLevel].skyColor, progress)
+      let groundColor = this.levels[this.currentLevel].groundColor.clone()
+      groundColor.lerp(this.levels[nextLevel].groundColor, progress)
+      this._scene.background = skyColor
+      this._scene.fog = new THREE.FogExp2(skyColor, 0.001)
+
+      let material = new THREE.MeshPhongMaterial({color: groundColor, emissive: groundColor})
+      this.ground.material = material
+
+      if (progress <= 0) {
+        this.prevLevel()
+      } else if (progress >= 1) {
+        this.nextLevel()
+      }
+
     // if !this.paused
     }
 
@@ -259,16 +284,25 @@ class Main {
 
   nextLevel () {
     var nextLevel = this.currentLevel + 1
-    if (nextLevel >= this.levels.length) nextLevel = 0
+    if (nextLevel >= this.levels.length) nextLevel = this.currentLevel
 
-    this.levels[nextLevel].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
-    this.currentLevel = nextLevel
+    if (nextLevel === this.currentLevel) return
 
-    this._scene.background = new THREE.Color(this.levels[this.currentLevel].skyColor)
-    this._scene.fog = new THREE.FogExp2(this.levels[this.currentLevel].skyColor, 0.001)
+    this.startLevel(nextLevel)
+  }
 
-    const material = new THREE.MeshPhongMaterial({color: this.levels[this.currentLevel].groundColor, emissive: this.levels[this.currentLevel].groundColor})
-    this.ground.material = material
+  prevLevel () {
+    var prevLevel = this.currentLevel - 1
+    if (prevLevel <= 0) prevLevel = this.currentLevel
+
+    if (prevLevel === this.currentLevel) return
+
+    this.startLevel(prevLevel)
+  }
+
+  startLevel (level) {
+    this.levels[level].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
+    this.currentLevel = level
   }
 
   onResourceCollide (resource) {
