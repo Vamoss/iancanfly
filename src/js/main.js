@@ -7,6 +7,7 @@ import Coin from './resources/Coin'
 import '../../static/js/GLTFLoader'
 import '../../static/js/Math'
 import ParticleManager from './particles/ParticleManager'
+import GyroNorm from 'gyronorm/dist/gyronorm.complete.js'
 // import shaderVert from 'shaders/custom.vert'
 // import shaderFrag from 'shaders/custom.frag'
 
@@ -20,6 +21,7 @@ class Main {
     this.mouseY = 0
     this.prevMouseX = this.mouseX
     this.prevMouseY = this.mouseY
+    this.useMouse = true
     this.diffX = 0
     this.diffY = 0
 
@@ -162,6 +164,7 @@ class Main {
     window.addEventListener('resize', this.onWindowResize.bind(this), false)
 
     this.loadAudio()
+    this.initAccelerometer()
     this.animate()
   }
 
@@ -197,12 +200,14 @@ class Main {
 
     if (!this.paused) {
       // mouse
-      this.diffX += (this.mouseX - this.prevMouseX) / 100
-      this.diffY += (this.mouseY - this.prevMouseY) / 100
-      this.diffX = Math.clamp(this.diffX, -1, 1)
-      this.diffY = Math.clamp(this.diffY, -1, 1)
-      this.prevMouseX = this.mouseX
-      this.prevMouseY = this.mouseY
+      if (this.useMouse) {
+        this.diffX += (this.mouseX - this.prevMouseX) / 100
+        this.diffY += (this.mouseY - this.prevMouseY) / 100
+        this.diffX = Math.clamp(this.diffX, -1, 1)
+        this.diffY = Math.clamp(this.diffY, -1, 1)
+        this.prevMouseX = this.mouseX
+        this.prevMouseY = this.mouseY
+      }
 
       // altitude
       this.altitude -= this.levels[this.currentLevel].decay
@@ -382,6 +387,48 @@ class Main {
           a.sound.source.onended = onAudioEnd
         }
       })
+    })
+  }
+
+  initAccelerometer () {
+    var args = {
+      frequency: 50, // ( How often the object sends the values - milliseconds )
+      gravityNormalized: true, // ( If the gravity related values to be normalized )
+      orientationBase: GyroNorm.GAME, // ( Can be GyroNorm.GAME or GyroNorm.WORLD. gn.GAME returns orientation values with respect to the head direction of the device. gn.WORLD returns the orientation values with respect to the actual north direction of the world. )
+      decimalCount: 2, // ( How many digits after the decimal point will there be in the return values )
+      logger: null, // ( Function to be called to log messages from gyronorm.js )
+      screenAdjusted: false // ( If set to true it will return screen adjusted values. )
+    }
+
+    var gn = new GyroNorm()
+
+    let t = this
+    gn.init(args).then(() => {
+      this.useMouse = false
+      gn.start(function (data) {
+        // Process:
+        // data.do.alpha  ( deviceorientation event alpha value )
+        // data.do.beta   ( deviceorientation event beta value )
+        // data.do.gamma  ( deviceorientation event gamma value )
+        // data.do.absolute ( deviceorientation event absolute value )
+
+        // data.dm.x    ( devicemotion event acceleration x value )
+        // data.dm.y    ( devicemotion event acceleration y value )
+        // data.dm.z    ( devicemotion event acceleration z value )
+
+        // data.dm.gx   ( devicemotion event accelerationIncludingGravity x value )
+        // data.dm.gy   ( devicemotion event accelerationIncludingGravity y value )
+        // data.dm.gz   ( devicemotion event accelerationIncludingGravity z value )
+
+        // data.dm.alpha  ( devicemotion event rotationRate alpha value )
+        // data.dm.beta   ( devicemotion event rotationRate beta value )
+        // data.dm.gamma  ( devicemotion event rotationRate gamma value )
+        t.diffX = data.do.alpha
+        t.diffY = data.do.beta
+        console.log(t.diffX, t.diffY)
+      })
+    }).catch(function (e) {
+      alert('Catch if the DeviceOrientation or DeviceMotion is not supported by the browser or device')
     })
   }
 }

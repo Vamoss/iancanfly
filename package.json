@@ -62,6 +62,7 @@
     "glsl-noise": "0.0.0",
     "glslify-fancy-imports": "^1.0.1",
     "glslify-hex": "^2.1.1",
+    "gyronorm": "^2.0.6",
     "stats.js": "^0.17.0",
     "three": "^0.89.0",
     "webvr-polyfill": "^0.10.7",
