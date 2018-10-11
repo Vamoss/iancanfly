@@ -359,6 +359,16 @@ class Main {
     this.currentAudio = 0
     let counter = -1
     let t = this
+
+    function onAudioEnd () {
+      console.log('audio ended')
+      t.currentAudio++
+      if (t.currentAudio >= t.audioList.length) t.currentAudio = 0
+
+      t.audioList[t.currentAudio].sound.play()
+      t.audioList[t.currentAudio].sound.source.onended = onAudioEnd
+    }
+
     this.audioList.map((a) => {
       a.index = counter++
       a.sound = new THREE.Audio(this.audioListener)
@@ -367,15 +377,9 @@ class Main {
         a.sound.setBuffer(buffer)
         a.sound.setLoop(false)
         a.sound.setVolume(0.5)
-        a.sound.onEnded = function () {
-          console.log('audio ended')
-          t.currentAudio++
-          if (t.currentAudio >= t.audioList.length) t.currentAudio = 0
-
-          t.audioList[t.currentAudio].sound.play()
-        }
         if (a.index === 0) {
           a.sound.play()
+          a.sound.source.onended = onAudioEnd
         }
       })
     })
