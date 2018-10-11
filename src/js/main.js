@@ -200,14 +200,12 @@ class Main {
 
     if (!this.paused) {
       // mouse
-      if (this.useMouse) {
-        this.diffX += (this.mouseX - this.prevMouseX) / 100
-        this.diffY += (this.mouseY - this.prevMouseY) / 100
-        this.diffX = Math.clamp(this.diffX, -1, 1)
-        this.diffY = Math.clamp(this.diffY, -1, 1)
-        this.prevMouseX = this.mouseX
-        this.prevMouseY = this.mouseY
-      }
+      this.diffX += (this.mouseX - this.prevMouseX) / 100
+      this.diffY += (this.mouseY - this.prevMouseY) / 100
+      this.diffX = Math.clamp(this.diffX, -1, 1)
+      this.diffY = Math.clamp(this.diffY, -1, 1)
+      this.prevMouseX = this.mouseX
+      this.prevMouseY = this.mouseY
 
       // altitude
       this.altitude -= this.levels[this.currentLevel].decay
@@ -223,7 +221,7 @@ class Main {
 
       // instantiate coins
       if (this.coin.model) {
-        while (this.coins.length < this.levels[this.currentLevel].coins && Math.random() > 0.97) {
+        if (this.coins.length < this.levels[this.currentLevel].coins && Math.random() > 0.97) {
           var coin = this.coin.model.clone()
           coin.rotation.z = Math.random() * Math.PI
           coin.position.set(
@@ -405,6 +403,8 @@ class Main {
     let t = this
     gn.init(args).then(() => {
       this.useMouse = false
+      this.prevMouseX = 0
+      this.prevMouseY = 0
       gn.start(function (data) {
         // Process:
         // data.do.alpha  ( deviceorientation event alpha value )
@@ -423,9 +423,9 @@ class Main {
         // data.dm.alpha  ( devicemotion event rotationRate alpha value )
         // data.dm.beta   ( devicemotion event rotationRate beta value )
         // data.dm.gamma  ( devicemotion event rotationRate gamma value )
-        t.diffX = data.do.alpha
-        t.diffY = data.do.beta
-        console.log(t.diffX, t.diffY)
+        t.mouseX = data.dm.gx * 10
+        t.mouseY = -data.dm.gz * 10
+        console.log(t.mouseX, t.mouseY)
       })
     }).catch(function (e) {
       alert('Catch if the DeviceOrientation or DeviceMotion is not supported by the browser or device')
