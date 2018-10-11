@@ -43,19 +43,25 @@ class Main {
         ship: new Parachute(),
         altitude: this.minAltitude,
         skyColor: new THREE.Color(0xcaf8f1),
-        groundColor: new THREE.Color(0x008800)
+        groundColor: new THREE.Color(0x008800),
+        decay: 0.03,
+        coins: 10
       },
       {
         ship: new Plane(),
         altitude: 400, // 1000
         skyColor: new THREE.Color(0xaaffff),
-        groundColor: new THREE.Color(0xcaf8f1)
+        groundColor: new THREE.Color(0xcaf8f1),
+        decay: 0.06,
+        coins: 7
       },
       {
         ship: new Spaceship(),
         altitude: 600, // 2000,
         skyColor: new THREE.Color(0x000000),
-        groundColor: new THREE.Color(0x000033)
+        groundColor: new THREE.Color(0x000033),
+        decay: 0.12,
+        coins: 5
       }
     ]
 
@@ -181,28 +187,26 @@ class Main {
       this.prevMouseY = this.mouseY
 
       // altitude
-      this.altitude -= 0.005
+      this.altitude -= this.levels[this.currentLevel].decay
       if (this.altitude < this.minAltitude) this.altitude = this.minAltitude
       this.curAltitude += (this.altitude - this.curAltitude) * 0.05
 
       let nextLevel = this.currentLevel + 1
-      let progress = 0
       if (nextLevel >= this.levels.length) {
         nextLevel = this.currentLevel
-        progress = 1
-      } else {
-        progress = (this.curAltitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
       }
+      let progress = (this.curAltitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
+      progress = THREE.Math.clamp(progress, 0, 1)
 
       // instantiate coins
       if (this.coin.model) {
-        while (this.coins.length < 5 && Math.random() > 0.97) {
+        while (this.coins.length < this.levels[this.currentLevel].coins && Math.random() > 0.97) {
           var coin = this.coin.model.clone()
           coin.rotation.z = Math.random() * Math.PI
           coin.position.set(
             (Math.random() - 0.5) * 2 * this.maxX,
             Math.random() * (this.maxY - 20) + 20 + this.curAltitude,
-            this._camera.position.z + 250 + Math.random() * 60)
+            this._camera.position.z + 550 + Math.random() * 60)
           this._scene.add(coin)
           this.coins.push(coin)
         }
@@ -246,7 +250,7 @@ class Main {
         // collider
         var position = model.position.clone().add(this.levels[this.currentLevel].ship.center)
         for (var i = this.coins.length - 1; i >= 0; i--) {
-          if (position.distanceToSquared(this.coins[i].position) < 100) {
+          if (position.distanceToSquared(this.coins[i].position) < 200) {
             this.onResourceCollide(this.coins[i])
           }
         }
@@ -261,11 +265,12 @@ class Main {
       let groundColor = this.levels[this.currentLevel].groundColor.clone()
       groundColor.lerp(this.levels[nextLevel].groundColor, progress)
       this._scene.background = skyColor
-      this._scene.fog = new THREE.FogExp2(skyColor, 0.001)
+      this._scene.fog = new THREE.FogExp2(skyColor, 0.003)
 
       let material = new THREE.MeshPhongMaterial({color: groundColor, emissive: groundColor})
       this.ground.material = material
 
+      console.log(progress)
       if (progress <= 0) {
         this.prevLevel()
       } else if (progress >= 1) {
@@ -293,7 +298,7 @@ class Main {
 
   prevLevel () {
     var prevLevel = this.currentLevel - 1
-    if (prevLevel <= 0) prevLevel = this.currentLevel
+    if (prevLevel <= 0) prevLevel = 0
 
     if (prevLevel === this.currentLevel) return
 
