@@ -23,6 +23,26 @@ class Main {
     this.diffX = 0
     this.diffY = 0
 
+    this.audioList = [
+      {
+        url: 'static/audios/Black-Eyed-Peas-I-Got-A-Feeling.ogg',
+        sound: null
+      },
+      {
+        url: 'static/audios/Eiffel65-Blue.ogg',
+        sound: null
+      },
+      {
+        url: 'static/audios/Enegetic-Game-Theme.ogg',
+        sound: null
+      },
+      {
+        url: 'static/audios/Imagine Dragons - Radioactive (Harder).ogg',
+        sound: null
+      }
+    ]
+    this.audioListener = new THREE.AudioListener()
+
     this.maxX = 80
     this.maxY = 50
     this.velX = 1.5
@@ -35,31 +55,28 @@ class Main {
     this.direction = new THREE.Vector3(0, 0, 10)
     this.direction.normalize()
     this.coins = []
-    this.coin = new Coin()
+    this.coin = new Coin(this.audioListener)
     this.paused = false
 
     this.levels = [
       {
-        ship: new Parachute(),
+        ship: new Parachute(this.audioListener),
         altitude: this.minAltitude,
         skyColor: new THREE.Color(0xcaf8f1),
-        groundColor: new THREE.Color(0x008800),
         decay: 0.03,
         coins: 10
       },
       {
-        ship: new Plane(),
+        ship: new Plane(this.audioListener),
         altitude: 400, // 1000
         skyColor: new THREE.Color(0xaaffff),
-        groundColor: new THREE.Color(0xcaf8f1),
         decay: 0.06,
         coins: 7
       },
       {
-        ship: new Spaceship(),
+        ship: new Spaceship(this.audioListener),
         altitude: 600, // 2000,
         skyColor: new THREE.Color(0x000000),
-        groundColor: new THREE.Color(0x000033),
         decay: 0.12,
         coins: 5
       }
@@ -68,10 +85,9 @@ class Main {
     this._camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000)
     this._camera.position.set(-100, 50, 0)
     this._camera.lookAt(0, 0, 100)
+    this._camera.add(this.audioListener)
 
     this._scene = new THREE.Scene()
-    this._scene.background = new THREE.Color(this.levels[this.currentLevel].skyColor)
-    this._scene.fog = new THREE.FogExp2(this.levels[this.currentLevel].skyColor, 0.001)
 
     this._renderer = new THREE.WebGLRenderer()
     this._renderer.setPixelRatio(window.devicePixelRatio)
@@ -104,7 +120,7 @@ class Main {
     this.particles = new ParticleManager(this._scene, this._camera)
 
     const geometry = new THREE.SphereGeometry(1, 320, 320)
-    const material = new THREE.MeshPhongMaterial({color: this.levels[this.currentLevel].groundColor, emissive: 0x00ff00})
+    const material = new THREE.MeshPhongMaterial({color: 0x008800, emissive: 0x00ff00})
     /*
     const material2 = new THREE.ShaderMaterial({
       vertexShader: shaderVert,
@@ -145,6 +161,7 @@ class Main {
 
     window.addEventListener('resize', this.onWindowResize.bind(this), false)
 
+    this.loadAudio()
     this.animate()
   }
 
@@ -155,6 +172,7 @@ class Main {
 
   onMouseDown () {
     this.nextLevel()
+    this.altitude = this.levels[this.currentLevel].altitude + 100
   }
 
   onMouseUp () {
@@ -195,7 +213,7 @@ class Main {
       if (nextLevel >= this.levels.length) {
         nextLevel = this.currentLevel
       }
-      let progress = (this.curAltitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
+      let progress = (this.altitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
       progress = THREE.Math.clamp(progress, 0, 1)
 
       // instantiate coins
@@ -262,15 +280,10 @@ class Main {
       // color
       let skyColor = this.levels[this.currentLevel].skyColor.clone()
       skyColor.lerp(this.levels[nextLevel].skyColor, progress)
-      let groundColor = this.levels[this.currentLevel].groundColor.clone()
-      groundColor.lerp(this.levels[nextLevel].groundColor, progress)
       this._scene.background = skyColor
       this._scene.fog = new THREE.FogExp2(skyColor, 0.003)
 
-      let material = new THREE.MeshPhongMaterial({color: groundColor, emissive: groundColor})
-      this.ground.material = material
-
-      console.log(progress)
+      // console.log(progress)
       if (progress <= 0) {
         this.prevLevel()
       } else if (progress >= 1) {
@@ -306,8 +319,13 @@ class Main {
   }
 
   startLevel (level) {
+    console.log('startLevel', level)
     this.levels[level].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
+    if (this.levels[this.currentLevel].ship.sound.isPlaying) {
+      this.levels[this.currentLevel].ship.sound.stop()
+    }
     this.currentLevel = level
+    this.levels[this.currentLevel].ship.sound.play()
   }
 
   onResourceCollide (resource) {
@@ -317,6 +335,9 @@ class Main {
     if (this.curAltitude < this.altitude) increase *= 2
 
     this.altitude += increase * (this.currentLevel + 1)
+
+    this.coin.sound.play()
+
     this.removeCoin(resource)
   }
 
@@ -327,6 +348,37 @@ class Main {
     }
 
     this._scene.remove(coin)
+  }
+
+  loadAudio () {
+    this.audioList = this.audioList
+      .map((a) => ({sort: Math.random(), value: a}))
+      .sort((a, b) => a.sort - b.sort)
+      .map((a) => a.value)
+
+    this.currentAudio = 0
+    let counter = -1
+    let t = this
+    this.audioList.map((a) => {
+      a.index = counter++
+      a.sound = new THREE.Audio(this.audioListener)
+      var audioLoader = new THREE.AudioLoader()
+      audioLoader.load(a.url, function (buffer) {
+        a.sound.setBuffer(buffer)
+        a.sound.setLoop(false)
+        a.sound.setVolume(0.5)
+        a.sound.onEnded = function () {
+          console.log('audio ended')
+          t.currentAudio++
+          if (t.currentAudio >= t.audioList.length) t.currentAudio = 0
+
+          t.audioList[t.currentAudio].sound.play()
+        }
+        if (a.index === 0) {
+          a.sound.play()
+        }
+      })
+    })
   }
 }
 

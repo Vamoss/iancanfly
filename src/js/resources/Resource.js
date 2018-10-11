@@ -2,18 +2,22 @@ import GLTFLoader from '../../../static/js/GLTFLoader'
 const EventEmitter = require('events')
 
 class Resource extends EventEmitter {
-  constructor (modelUrl, scale, rotation) {
+  constructor (modelUrl, scale, rotation, audioUrl, audioListener) {
     super()
 
     this.modelUrl = modelUrl
     this.scale = scale
     this.rotation = rotation
+    this.audioUrl = audioUrl
+    this.audioListener = audioListener
     this.model = null
+    this.sound = null
 
-    this.load()
+    this.loadModel()
+    this.loadAudio()
   }
 
-  load () {
+  loadModel () {
     var t = this
     var loader = new GLTFLoader()
     loader.load('static/models/' + t.modelUrl, function (gltf) {
@@ -26,6 +30,19 @@ class Resource extends EventEmitter {
     },
     function (error) {
       console.error('GLTF LOADER:', error)
+    })
+  }
+
+  loadAudio () {
+    var t = this
+    // eslint-disable-next-line
+    this.sound = new THREE.Audio(this.audioListener)
+    // eslint-disable-next-line
+    var audioLoader = new THREE.AudioLoader()
+    audioLoader.load(this.audioUrl, function (buffer) {
+      t.sound.setBuffer(buffer)
+      t.sound.setLoop(false)
+      t.sound.setVolume(0.5)
     })
   }
 }
