@@ -7,9 +7,9 @@ class ParticleManager extends EventEmitter {
 
     this._scene = scene
     this._camera = camera
-    this.prevCamX = 0
-    this.prevCamY = 0
-    this.prevCamZ = 0
+    this.prevCamX = this._camera.position.x
+    this.prevCamY = this._camera.position.y
+    this.prevCamZ = this._camera.position.z
 
     this.maxParticles = 1000
 
@@ -19,9 +19,9 @@ class ParticleManager extends EventEmitter {
 
     for (let p = 0; p < this.maxParticles; p++) {
       let particle = new THREE.Vector3(
+        Math.random() * this.spread - this.spread * 0.3,
         Math.random() * this.spread - this.spread * 0.5,
-        Math.random() * this.spread - this.spread * 0.5,
-        Math.random() * this.spread - this.spread * 0.5
+        Math.random() * 500
       )
 
       this.particles.vertices.push(particle)
@@ -66,9 +66,9 @@ class ParticleManager extends EventEmitter {
       particle.z -= zDiff
 
       if (particle.z < -30) {
-        particle.x = Math.random() * this.spread - this.spread * 0.5
+        particle.x = Math.random() * this.spread - this.spread * 0.3
         particle.y = Math.random() * this.spread - this.spread * 0.5
-        particle.z = 300 + Math.random() * 60
+        particle.z = 500 + Math.random() * 500
       }
     }
 

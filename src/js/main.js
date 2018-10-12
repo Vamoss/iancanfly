@@ -21,7 +21,6 @@ class Main {
     this.mouseY = 0
     this.prevMouseX = this.mouseX
     this.prevMouseY = this.mouseY
-    this.useMouse = true
     this.diffX = 0
     this.diffY = 0
 
@@ -66,27 +65,27 @@ class Main {
         altitude: this.minAltitude,
         skyColor: new THREE.Color(0xcaf8f1),
         decay: 0.03,
-        coins: 10
+        coins: 20
       },
       {
         ship: new Plane(this.audioListener),
         altitude: 400, // 1000
         skyColor: new THREE.Color(0xaaffff),
         decay: 0.06,
-        coins: 7
+        coins: 15
       },
       {
         ship: new Spaceship(this.audioListener),
         altitude: 600, // 2000,
         skyColor: new THREE.Color(0x000000),
         decay: 0.12,
-        coins: 5
+        coins: 10
       }
     ]
 
     this._camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000)
-    this._camera.position.set(-100, 50, 0)
-    this._camera.lookAt(0, 0, 100)
+    this._camera.position.set(-100, this.altitude + 50, 0)
+    this._camera.lookAt(0, this.altitude, 100)
     this._camera.add(this.audioListener)
 
     this._scene = new THREE.Scene()
@@ -96,11 +95,13 @@ class Main {
     this._renderer.setSize(window.innerWidth, window.innerHeight)
     document.body.appendChild(this._renderer.domElement)
 
+    /*
     this.stats = new Stats()
     this.stats.showPanel(0)// fps,
     // this.stats.showPanel(1)// ms
     // this.stats.showPanel(2)// mb
     document.body.appendChild(this.stats.dom)
+    */
 
     // for inspection debug
     // window.scene = this._scene
@@ -132,14 +133,7 @@ class Main {
     this.ground = new THREE.Mesh(geometry, material)
     this.ground.name = 'Ground'
     this._scene.add(this.ground)
-    /*
-    var wireframe = new THREE.WireframeGeometry(geometry)
-    var line = new THREE.LineSegments(wireframe)
-    line.material.depthTest = false
-    line.material.opacity = 0.25
-    line.material.transparent = true
-    this.ground.add(line)
-    */
+
     const earthRadius = 6000000 // 6000 km
     this.ground.scale.set(earthRadius, earthRadius, earthRadius)
     this.ground.position.y = -earthRadius
@@ -149,6 +143,7 @@ class Main {
     for (var i = 0; i < this.levels.length; i++) {
       this.levels[i].ship.on('onModelLoaded', function (model) {
         t._scene.add(model)
+        model.position.y = t.altitude
       })
     }
 
@@ -174,8 +169,8 @@ class Main {
   }
 
   onMouseDown () {
-    this.nextLevel()
-    this.altitude = this.levels[this.currentLevel].altitude + 100
+    // this.nextLevel()
+    // this.altitude = this.levels[this.currentLevel].altitude + 100
   }
 
   onMouseUp () {
@@ -196,7 +191,7 @@ class Main {
   }
 
   animate () {
-    this.stats.begin()
+    // this.stats.begin()
 
     if (!this.paused) {
       // mouse
@@ -216,7 +211,7 @@ class Main {
       if (nextLevel >= this.levels.length) {
         nextLevel = this.currentLevel
       }
-      let progress = (this.altitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
+      let progress = (this.curAltitude - this.levels[this.currentLevel].altitude) / (this.levels[nextLevel].altitude - this.levels[this.currentLevel].altitude)
       progress = THREE.Math.clamp(progress, 0, 1)
 
       // instantiate coins
@@ -227,7 +222,7 @@ class Main {
           coin.position.set(
             (Math.random() - 0.5) * 2 * this.maxX,
             Math.random() * (this.maxY - 20) + 20 + this.curAltitude,
-            this._camera.position.z + 550 + Math.random() * 60)
+            this._camera.position.z + 500 + Math.random() * 300)
           this._scene.add(coin)
           this.coins.push(coin)
         }
@@ -271,7 +266,7 @@ class Main {
         // collider
         var position = model.position.clone().add(this.levels[this.currentLevel].ship.center)
         for (var i = this.coins.length - 1; i >= 0; i--) {
-          if (position.distanceToSquared(this.coins[i].position) < 200) {
+          if (position.distanceToSquared(this.coins[i].position) < 300) {
             this.onResourceCollide(this.coins[i])
           }
         }
@@ -298,7 +293,7 @@ class Main {
 
     this._renderer.render(this._scene, this._camera)
 
-    this.stats.end()
+    // this.stats.end()
 
     requestAnimationFrame(this.animate.bind(this))
   }
@@ -363,17 +358,8 @@ class Main {
     let counter = -1
     let t = this
 
-    function onAudioEnd () {
-      console.log('audio ended')
-      t.currentAudio++
-      if (t.currentAudio >= t.audioList.length) t.currentAudio = 0
-
-      t.audioList[t.currentAudio].sound.play()
-      t.audioList[t.currentAudio].sound.source.onended = onAudioEnd
-    }
-
     this.audioList.map((a) => {
-      a.index = counter++
+      a.index = ++counter
       a.sound = new THREE.Audio(this.audioListener)
       var audioLoader = new THREE.AudioLoader()
       audioLoader.load(a.url, function (buffer) {
@@ -382,7 +368,14 @@ class Main {
         a.sound.setVolume(0.5)
         if (a.index === 0) {
           a.sound.play()
-          a.sound.source.onended = onAudioEnd
+          a.sound.source.onended = () => {
+            console.log('audio ended', t.currentAudio, t.audioList.length, a.index)
+            t.currentAudio++
+            if (t.currentAudio >= t.audioList.length) t.currentAudio = 0
+            console.log('audio ended', t.currentAudio, t.audioList.length, a.index)
+
+            t.audioList[t.currentAudio].sound.play()
+          }
         }
       })
     })
@@ -402,30 +395,11 @@ class Main {
 
     let t = this
     gn.init(args).then(() => {
-      this.useMouse = false
-      this.prevMouseX = 0
-      this.prevMouseY = 0
       gn.start(function (data) {
-        // Process:
-        // data.do.alpha  ( deviceorientation event alpha value )
-        // data.do.beta   ( deviceorientation event beta value )
-        // data.do.gamma  ( deviceorientation event gamma value )
-        // data.do.absolute ( deviceorientation event absolute value )
-
-        // data.dm.x    ( devicemotion event acceleration x value )
-        // data.dm.y    ( devicemotion event acceleration y value )
-        // data.dm.z    ( devicemotion event acceleration z value )
-
-        // data.dm.gx   ( devicemotion event accelerationIncludingGravity x value )
-        // data.dm.gy   ( devicemotion event accelerationIncludingGravity y value )
-        // data.dm.gz   ( devicemotion event accelerationIncludingGravity z value )
-
-        // data.dm.alpha  ( devicemotion event rotationRate alpha value )
-        // data.dm.beta   ( devicemotion event rotationRate beta value )
-        // data.dm.gamma  ( devicemotion event rotationRate gamma value )
-        t.mouseX = data.dm.gx * 10
-        t.mouseY = -data.dm.gz * 10
-        console.log(t.mouseX, t.mouseY)
+        if (data.dm.gx!=0 || data.dm.gz!=0) {
+          t.mouseX = data.dm.gx * 30
+          t.mouseY = -data.dm.gz * 30
+        }
       })
     }).catch(function (e) {
       alert('Catch if the DeviceOrientation or DeviceMotion is not supported by the browser or device')
