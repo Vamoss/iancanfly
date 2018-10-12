@@ -397,7 +397,7 @@ class Main {
     gn.init(args).then(() => {
       gn.start(function (data) {
         if (data.dm.gx!=0 || data.dm.gz!=0) {
-          t.mouseX = data.dm.gx * 30
+          t.mouseX = -data.dm.gx * 30
           t.mouseY = -data.dm.gz * 30
         }
       })
