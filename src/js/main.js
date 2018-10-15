@@ -1,8 +1,11 @@
 import * as THREE from 'three'
 import * as Stats from 'stats.js'
 import Parachute from './ships/Parachute'
+import Balloon from './ships/Balloon'
 import Plane from './ships/Plane'
 import Spaceship from './ships/Spaceship'
+import Spaceship2 from './ships/Spaceship2'
+import Ovni from './ships/Ovni'
 import Coin from './resources/Coin'
 import '../../static/js/GLTFLoader'
 import '../../static/js/Math'
@@ -68,18 +71,39 @@ class Main {
         coins: 20
       },
       {
-        ship: new Plane(this.audioListener),
-        altitude: 400, // 1000
+        ship: new Balloon(this.audioListener),
+        altitude: 400,
         skyColor: new THREE.Color(0xaaffff),
+        decay: 0.04,
+        coins: 18
+      },
+      {
+        ship: new Plane(this.audioListener),
+        altitude: 600,
+        skyColor: new THREE.Color(0xf26dd9),
         decay: 0.06,
         coins: 15
       },
       {
         ship: new Spaceship(this.audioListener),
-        altitude: 600, // 2000,
+        altitude: 800,
+        skyColor: new THREE.Color(0xff933a),
+        decay: 0.12,
+        coins: 12
+      },
+      /*{
+        ship: new Spaceship2(this.audioListener),
+        altitude: 1000,
         skyColor: new THREE.Color(0x000000),
         decay: 0.12,
         coins: 10
+      },*/
+      {
+        ship: new Ovni(this.audioListener),
+        altitude: 1000,
+        skyColor: new THREE.Color(0x000000),
+        decay: 0.12,
+        coins: 8
       }
     ]
 
