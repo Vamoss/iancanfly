@@ -1,22 +1,26 @@
 import * as THREE from 'three'
-import * as Stats from 'stats.js'
+// import * as Stats from 'stats.js'
 import Parachute from './ships/Parachute'
 import Balloon from './ships/Balloon'
 import Plane from './ships/Plane'
 import Spaceship from './ships/Spaceship'
-import Spaceship2 from './ships/Spaceship2'
+// import Spaceship2 from './ships/Spaceship2'
 import Ovni from './ships/Ovni'
 import Coin from './resources/Coin'
 import '../../static/js/GLTFLoader'
 import '../../static/js/Math'
 import ParticleManager from './particles/ParticleManager'
 import GyroNorm from 'gyronorm/dist/gyronorm.complete.js'
+import Amplitude from 'amplitude'
 // import shaderVert from 'shaders/custom.vert'
 // import shaderFrag from 'shaders/custom.frag'
 
 class Main {
   constructor () {
     var t = this
+
+    this.userId = new Date().getTime()
+    this.amplitude = new Amplitude('82e23a024491264ca4d730a9297d4073')
 
     this.currentLevel = 0
 
@@ -342,6 +346,9 @@ class Main {
 
   startLevel (level) {
     console.log('startLevel', level)
+
+    this.track("change_level", {level: level})
+
     this.levels[level].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
     if (this.levels[this.currentLevel].ship.sound.isPlaying) {
       this.levels[this.currentLevel].ship.sound.stop()
@@ -361,6 +368,8 @@ class Main {
     this.coin.sound.play()
 
     this.removeCoin(resource)
+
+    this.track("get_resource")
   }
 
   removeCoin (coin) {
@@ -428,6 +437,12 @@ class Main {
     }).catch(function (e) {
       alert('Catch if the DeviceOrientation or DeviceMotion is not supported by the browser or device')
     })
+  }
+
+  track (event_type, event_properties) {
+    let data = {event_type: event_type, user_id: this.userId}
+    if (event_properties) data.event_properties = event_properties
+    this.amplitude.track(data)
   }
 }
 

@@ -58,6 +58,7 @@
     "webpack-merge": "^4.1.0"
   },
   "dependencies": {
+    "amplitude": "^3.5.0",
     "glsl-checker": "^1.0.1",
     "glsl-noise": "0.0.0",
     "glslify-fancy-imports": "^1.0.1",
