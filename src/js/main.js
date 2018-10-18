@@ -10,7 +10,6 @@ import Coin from './resources/Coin'
 import '../../static/js/GLTFLoader'
 import '../../static/js/Math'
 import ParticleManager from './particles/ParticleManager'
-import GyroNorm from 'gyronorm/dist/gyronorm.complete.js'
 import Amplitude from 'amplitude'
 // import shaderVert from 'shaders/custom.vert'
 // import shaderFrag from 'shaders/custom.frag'
@@ -95,13 +94,15 @@ class Main {
         decay: 0.12,
         coins: 12
       },
-      /*{
+      /*
+      {
         ship: new Spaceship2(this.audioListener),
         altitude: 1000,
         skyColor: new THREE.Color(0x000000),
         decay: 0.12,
         coins: 10
-      },*/
+      },
+      */
       {
         ship: new Ovni(this.audioListener),
         altitude: 1000,
@@ -347,7 +348,7 @@ class Main {
   startLevel (level) {
     console.log('startLevel', level)
 
-    this.track("change_level", {level: level})
+    this.track('change_level', {level: level})
 
     this.levels[level].ship.model.position.copy(this.levels[this.currentLevel].ship.model.position)
     if (this.levels[this.currentLevel].ship.sound.isPlaying) {
@@ -369,7 +370,7 @@ class Main {
 
     this.removeCoin(resource)
 
-    this.track("get_resource")
+    this.track('get_resource')
   }
 
   removeCoin (coin) {
@@ -415,33 +416,25 @@ class Main {
   }
 
   initAccelerometer () {
-    var args = {
-      frequency: 50, // ( How often the object sends the values - milliseconds )
-      gravityNormalized: true, // ( If the gravity related values to be normalized )
-      orientationBase: GyroNorm.GAME, // ( Can be GyroNorm.GAME or GyroNorm.WORLD. gn.GAME returns orientation values with respect to the head direction of the device. gn.WORLD returns the orientation values with respect to the actual north direction of the world. )
-      decimalCount: 2, // ( How many digits after the decimal point will there be in the return values )
-      logger: null, // ( Function to be called to log messages from gyronorm.js )
-      screenAdjusted: false // ( If set to true it will return screen adjusted values. )
-    }
-
-    var gn = new GyroNorm()
-
     let t = this
-    gn.init(args).then(() => {
-      gn.start(function (data) {
-        if (data.dm.gx!=0 || data.dm.gz!=0) {
-          t.mouseX = -data.dm.gx * 30
-          t.mouseY = -data.dm.gz * 30
+    window.addEventListener('devicemotion', function (event) {
+      let x = event.accelerationIncludingGravity.x
+      let y = event.accelerationIncludingGravity.y
+      if (x !== 0 || y !== 0) {
+        if (window.innerWidth > window.innerHeight) {
+          t.mouseX = -y * 30
+          t.mouseY = x * 30
+        } else {
+          t.mouseX = x * 30
+          t.mouseY = -y * 30
         }
-      })
-    }).catch(function (e) {
-      alert('Catch if the DeviceOrientation or DeviceMotion is not supported by the browser or device')
+      }
     })
   }
 
-  track (event_type, event_properties) {
-    let data = {event_type: event_type, user_id: this.userId}
-    if (event_properties) data.event_properties = event_properties
+  track (eventType, eventProperties) {
+    let data = {event_type: eventType, user_id: this.userId}
+    if (eventProperties) data.event_properties = eventProperties
     this.amplitude.track(data)
   }
 }
