@@ -19,6 +19,11 @@ class Main {
     var t = this
 
     this.userId = new Date().getTime()
+    if (localStorage.getItem('userId')) {
+      this.userId = localStorage.getItem('userId')
+    } else {
+      localStorage.setItem('userId', this.userId)
+    }
     this.amplitude = new Amplitude('82e23a024491264ca4d730a9297d4073')
 
     this.currentLevel = 0
