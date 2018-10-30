@@ -181,6 +181,8 @@ class Main {
       })
     }
 
+    this.altimeterEl = document.getElementById('altimeter')
+
     this._renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false)
     this._renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false)
     this._renderer.domElement.addEventListener('mouseup', this.onMouseUp.bind(this), false)
@@ -224,7 +226,7 @@ class Main {
     this._renderer.setSize(window.innerWidth, window.innerHeight)
   }
 
-  animate () {
+  animate (timestamp) {
     // this.stats.begin()
 
     if (!this.paused) {
@@ -240,6 +242,8 @@ class Main {
       this.altitude -= this.levels[this.currentLevel].decay
       if (this.altitude < this.minAltitude) this.altitude = this.minAltitude
       this.curAltitude += (this.altitude - this.curAltitude) * 0.05
+
+      this.altimeterEl.innerHTML = Math.round(this.curAltitude)
 
       let nextLevel = this.currentLevel + 1
       if (nextLevel >= this.levels.length) {
